@@ -575,7 +575,7 @@ class ImportCSV {
 	}
 	private function fgetcsvUTF8(&$handle, $length, $separator = ';',$encoding="") {
 		if (($buffer = fgets($handle, $length)) !== false)    {
-			$buffer = $this->autoUTF($buffer);
+			$buffer = $this->autoUTF($buffer,$encoding);
 			return str_getcsv($buffer, $separator);
 		}
 		return false;	
