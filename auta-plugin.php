@@ -26,7 +26,7 @@ class AutaPlugin {
 	public function __construct() {			
 		register_activation_hook( __FILE__, 'AutaPlugin::auta_plugin_install' );
 		add_action( 'admin_menu', 'AutaPlugin::mauta_post_actions_menu' ); 
-		AutaPlugin::$customPost=new AutaCustomPost(AutaPlugin::$customPostType); 						
+		AutaPlugin::$customPost=new AutaCustomPost(AutaPlugin::$customPostType); 								
 	}
 	
 	public static function getTable($tab) {
@@ -66,8 +66,8 @@ class AutaPlugin {
 				'name' => $welcome_name, 
 				'text' => $welcome_text, 
 			) 
-		);
-
+		);		
+		AutaPlugin::$customPost->autaFields->saveFields("fields");
 	}
 	 
 	function mauta_post_actions_menu() {    
@@ -78,7 +78,7 @@ class AutaPlugin {
 		$menu_slug  = 'mauta-plugin-settings';   
 		$function   = 'AutaPlugin::mauta_plugin_actions_page';   
 		$icon_url   = 'dashicons-media-code';   
-		$position   = 4;    
+		$position   = 5;    
 		add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position ); 
 	}
 	function mauta_plugin_actions_page() {
@@ -87,10 +87,9 @@ class AutaPlugin {
 	  <h1>Pluing settings and actions below</h1>
 	  <?php
 	  $setUrl = [
-					["recreate",add_query_arg( 'do', 'recreate'),"let this plugin know about its custom fields"],
+					["recreate",add_query_arg( 'do', 'recreate'),"remove all"],
 					["refresh",add_query_arg( 'do', 'refresh'),"not implemented"],				
-					["ajax frontend",add_query_arg( 'do', 'ajax'),"populate fields for ajax frontend filtering"],
-					["csv import",add_query_arg( 'do', 'csv'),"import csv file"]
+					["ajax frontend",add_query_arg( 'do', 'ajax'),"populate fields for ajax frontend filtering"]		
 				];
 	  ?>
 	  <ul>
@@ -114,12 +113,7 @@ class AutaPlugin {
 	  if ($do=="ajax") {	
 		AutaPlugin::$customPost->autaFields->makeTable("ajax");
 		AutaPlugin::$customPost->autaFields->saveFields("ajax");
-	  }
-	  if ($do=="csv") {
-		$importCSV=new ImportCSV();
-		$importCSV->loadCsvFile(plugin_dir_path( __FILE__ )."recsout.txt","csvtab","^","",null,true,"cp852");		  
-		$importCSV->createPostsFromTable("csvtab");	
-	  }
+	  }	
 	}
 	function logWrite($val) {
 	 file_put_contents(plugin_dir_path( __FILE__ ) . "log.txt",date("d-m-Y h:i:s")." ".$val."\n",FILE_APPEND | LOCK_EX);
@@ -205,19 +199,43 @@ class AutaCustomPost {
 	 
 	 }
 	 
-	function auta_menu_function() {
-		echo 'ahoj auta';	
-		return "neco";
+	function csvMenu() {
+		$setUrl = [	
+			["csv import",add_query_arg( 'do', 'csv'),"import csv file"],
+			["csv remove",add_query_arg( 'do', 'removecsv'),"remove csv imports"],
+		];
+		?>
+		<h1>CSV options</h1>
+		<ul>
+		<?php	 
+		foreach ($setUrl as $s) { 
+		?>
+			<li><a href='<?= $s[1]?>'><?= $s[0]?></a><br /><?= $s[2]?></li>		  		  
+		<?php
+		}
+		?>
+		</ul>
+		<?php	
+		$do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
+		if ($do=="csv") {
+			$importCSV=new ImportCSV();		
+			$importCSV->loadCsvFile(plugin_dir_path( __FILE__ )."recsout.txt","csvtab","^","",null,true,"cp852");		  
+			$importCSV->createPostsFromTable("csvtab");	
+		  }
+		  if ($do=="removecsv") {
+			$importCSV=new ImportCSV();
+			$importCSV->removePreviousPosts("csvtab");	
+		  }	
 	}
 
 	 function add_to_admin_menu() {
 		//add_submenu_page( string $parent_slug, string $page_title, string $menu_title, string $capability, string $menu_slug, callable $function = '', int $position = null )
 		$parent_slug='edit.php?post_type='.$this->customPostType;
-		$page_title='Auta admin';
-		$menu_title='Auta';
+		$page_title='Auta admin';		
 		$capability='edit_posts';
 		$menu_slug=basename(__FILE__);
-		$function = [$this,'auta_menu_function'];
+		$function = [$this,'csvMenu'];
+		$menu_title='Import';
 		add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $function);
 	} 
 		
@@ -346,7 +364,8 @@ class AutaFields {
 		$custom = get_post_custom($post->ID);
 		
 		foreach ($this->fieldsList as $f) {
-		  $val=$custom[$f->id][0];	
+		  //echo "aaacust: {$f->name} ".$custom[$f->name][0];
+		  $val=$custom[$f->name][0];	
 		  $f->addMetaBox($val);	
 		}
 		
@@ -356,27 +375,7 @@ class AutaFields {
 	}	
 	function addanother_metabox() {		
 		$urlSave=add_query_arg( 'msave', '1');
-		$urlNew="'./post-new.php?post_type=".AutaPlugin::$customPostType."'";								
-		/*
-		aria-expanded (chybi) -> aktualizovat
-		
-		aria-expanded="false" -> publikovat
-		aria-expanded="true" -> publikovat2
-		*/
-		
-		/*
-		<script>		
-		 function saveAndAdd() {
-			var $butt=jQuery('button.editor-post-publish-button__button');
-			
-			jQuery('button.editor-post-publish-button__button').click();  
-            setTimeout(function() {				
-        				window.location=<?= $urlNew;?>;
-        			}, 2000);	
-            return false;  
-		 }
-		</script>
-		*/
+		$urlNew="'./post-new.php?post_type=".AutaPlugin::$customPostType."'";										
 		?>
 		
 		<button onclick='javascipt:saveAndAdd();'>Add another</a>				 
@@ -435,10 +434,11 @@ class AutaField {
  } 
  public function addMetaBox($val) {
 	$this->val=$val;
-	add_meta_box("postfunctiondiv{$this->id}", $this->title, [$this,'mauta_metabox_html'], 'mauta', 'side', 'high');  
+	add_meta_box("postfunctiondiv{$this->name}", $this->title, [$this,'mauta_metabox_html'], 'mauta', 'side', 'high');  
  }
  function mauta_metabox_html() 	{				
 		$val = isset($this->val)?$this->val:'';	
+		//echo "aaaval:".$this->val;
 		if ($this->type=="select") {				
 		$options=explode(";",$this->options);		
 		?>
@@ -474,7 +474,7 @@ class AutaField {
  }
  public function printFieldEdit() {
 	 ?>
-	 <form method='post' class='editFieldRow'>
+	 <form action='<?= remove_query_arg( 'do')?>' method='post' class='editFieldRow'>	 
 	 <table class="widefat" cellspacing="0">
 		<tr>		 
 			<td><label>name</label><input type='text' readonly='true' name='name' value='<?= $this->name?>' /></td>
@@ -522,43 +522,97 @@ class ImportCSV {
 		*/
 		$this->settings=[		
 		 "createpost" => true,
-		 "createmeta" => false,
+		 "createmeta" => true,
 		 "createcat" => false
 		];
-		
+		/*
+			mapping template: text %1 %2 %3 text2|csv field1|csv field2|csv field3
+			no | => only csv field
+		*/
 		$this->mapping=[
 		 "post" => [
-			 "post_title" => "neco",
-			 "post_content" => "neco2",
-			 "post_description" => "neco3",		 
+			 "post_title" => "auto %1 %2|Běžné číslo|Vozidlo - model",
+			 "post_content" => "Barva",
+			 "post_description" => "Popis",		 
 		 ],
-		 "meta" => []		 
+		 "meta" => [
+			 "mauta_znacka" => "Vozidlo - značka",
+			 "mauta_automat" => "Automatická převodovka"
+		 ],
+		 "replaceglobally" => [
+			"Ano" => "on",
+			"Ne" => "off"
+		 ]
 		];
 		
 		
 	}	
-	public function createPostsFromTable($table,$metas=array()) {
+	public function removePreviousPosts($table,$brute=false) {
+		global $wpdb;	
+		
+		if ($brute) {
+			$query="
+				DELETE a,b,c
+				FROM wp_posts a
+				LEFT JOIN wp_term_relationships b ON ( a.ID = b.object_id )
+				LEFT JOIN wp_postmeta c ON ( a.ID = c.post_id )
+				WHERE a.post_title like 'neco%';
+			";
+			$result = $wpdb->get_results($query);  			
+		}
+		$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table"));		
+		foreach ($results as $r) {			
+			$title=$this->processTemplate($this->mapping["post"]["post_title"],$r);
+			echo "<br />deleted: ".$title;
+			$query="
+				DELETE a,b,c
+				FROM wp_posts a
+				LEFT JOIN wp_term_relationships b ON ( a.ID = b.object_id )
+				LEFT JOIN wp_postmeta c ON ( a.ID = c.post_id )
+				WHERE a.post_title like '".$title."';
+			";
+			$result = $wpdb->get_results($query);  			
+		}
+	}
+	private function processTemplate($template,$r) {
+		$templateEx=explode("|",$template);
+		if (count($templateEx)<=1) { 
+			$out = $r->{$template};				
+		}
+		else {
+			$out = $templateEx[0];					
+			for ($substCnt=1;$substCnt<count($templateEx);$substCnt++)	{																
+				$out = str_replace("%{$substCnt}",$r->{$templateEx[$substCnt]},$out);
+			}
+		}
+		foreach ($this->mapping["replaceglobally"] as $repl=>$for) {
+			if ($out==$repl) $out=$for;
+		}
+		return $out;
+	}
+	public function createPostsFromTable($table) {
 		global $wpdb;		
-
 		$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table"));		
 
 		foreach ($results as $r) {
 			//create post
 			$postArr=array();
 			if ($this->settings["createpost"]) {
-				echo "!!!";
-				foreach ($this->mapping["post"] as $key=>$field) {
-				 $postArr[$key] = $r->$field;	
+				foreach ($this->mapping["post"] as $key=>$template) {
+				 //$postArr[$key] = $r->$field;	
+				 $postArr[$key]=$this->processTemplate($template,$r);				 
 				}								
 				$postArr["post_status"]="publish";
 				$postArr["post_type"]=AutaPlugin::$customPostType;
-				print_r($postArr);
+				//print_r($postArr);
 				$postId=wp_insert_post($postArr);
+				echo "<br />inserted {$postArr["post_title"]} $postId";
 				
 				//create metas
-				if ($this->settings["createmeta"]) {					
-					foreach ($this->mapping["meta"] as $key=>$field) {
-					 add_post_meta($postId,$key,$r->$field);
+				if ($this->settings["createmeta"]) {								
+					foreach ($this->mapping["meta"] as $key=>$template) {						
+					 //echo "<br />addmeta $postId $key $template ".$r->$template."--".$this->processTemplate($template,$r);					 
+					 add_post_meta($postId,$key,$this->processTemplate($template,$r));
 					}					
 				}
 				
@@ -591,7 +645,7 @@ class ImportCSV {
 		$queryO="INSERT INTO `$table` SET ";
 		$filesize=filesize($file);
 		$radek=0;
-		while ($line = $this->fgetcsvUTF8($fh, 8000, $sep)) {		
+		while ($line = $this->fgetcsvUTF8($fh, 8000, $sep,$encoding)) {		
 			//utf8_encode			
 			
 			$lineNum++;
@@ -608,7 +662,7 @@ class ImportCSV {
 					$n++;
 				}									
 				$query=$this->getInsertQueryFromArray($table,$mRow,$skipCols);
-				echo "<br />$query";
+				//echo "<br />$query";
 				$result = $wpdb->get_results($query);
 				$mInserted++;			 
 			}			
