@@ -1,0 +1,8 @@
+03-02-2021 09:10:38 save: mauta_kategorie vetsi
+03-02-2021 09:10:38 save: mauta_znacka Škoda
+03-02-2021 09:10:38 save: mauta_cenaden 100
+03-02-2021 09:10:38 save: mauta_automat 
+03-02-2021 09:10:41 save: mauta_kategorie vetsi
+03-02-2021 09:10:41 save: mauta_znacka Škoda
+03-02-2021 09:10:41 save: mauta_cenaden 100
+03-02-2021 09:10:41 save: mauta_automat 1
