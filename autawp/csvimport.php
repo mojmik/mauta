@@ -111,6 +111,9 @@ class ImportCSV {
 				
 				if ($this->settings["createcat"]) {
 					//category?
+					$nameKat="";
+					$slugKat="";
+					$parentKatId=0;
 					$wpdocs_cat = array('taxonomy' => 'hp_listing_category', 'cat_name' => $nameKat, 'category_description' => $nameKat, 'category_nicename' => $slugKat, 'category_parent' => $parentKatId);	 
 					$wpdocs_cat_id = wp_insert_category($wpdocs_cat,false);
 				}
@@ -138,6 +141,9 @@ class ImportCSV {
 		$queryO="INSERT INTO `$table` SET ";
 		$filesize=filesize($file);
 		$radek=0;
+		$lineNum=0;
+		$mInserted=0;
+		$mCols=array();
 		while ($line = $this->fgetcsvUTF8($fh, 8000, $sep,$encoding)) {		
 			//utf8_encode			
 			
@@ -165,8 +171,9 @@ class ImportCSV {
 	}
 	function createTable($tabName,$mCols) {	
 		global $wpdb;	
+		$charset_collate = $wpdb->get_charset_collate();
 		$wpdb->query( "DROP TABLE IF EXISTS {$tabName}");
-		
+		$cols="";
 		foreach ($mCols as $mCol) {
 			$cols.="`$mCol` text,";
 		}

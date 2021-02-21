@@ -15,6 +15,6 @@ define( 'MAUTA_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once MAUTA_PLUGIN_PATH . '/AutaWP/autaplugin.php';
 
-new AutaWP\AutaPlugin(); 
-
+$mautawp=new AutaWP\AutaPlugin(); 
+$mautawp->initWP();
 

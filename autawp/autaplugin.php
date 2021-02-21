@@ -22,7 +22,22 @@ class AutaPlugin {
 		add_action( 'admin_menu', __NAMESPACE__ . '\\AutaPlugin::mauta_post_actions_menu' ); 
 		AutaPlugin::$customPost=new AutaCustomPost(AutaPlugin::$customPostType); 								
 	}
-	
+	function initWP() {
+		add_action( 'admin_enqueue_scripts', [$this,'mautaEnqueueStyle'], 11);
+	}
+	function mautaEnqueueStyle() {				
+		$mStyles=[
+			 'mauta' => ['src' => plugin_dir_url( __FILE__ ) . 'mauta.css']			 
+		];
+		
+		foreach ($mStyles as $key => $value) {
+			$src = (isset($value["src"])) ? $value["src"] : $value["srcCdn"];
+			$key = 'autawp-' . $key;
+			wp_register_style($key, $src);
+			wp_enqueue_style($key);
+		}
+	}
+
 	public static function getTable($tab) {
 	  global $wpdb;	
 	  if ($tab=="main") return $wpdb->prefix.AutaPlugin::$prefix."plugin_main";
@@ -109,7 +124,7 @@ class AutaPlugin {
 		AutaPlugin::$customPost->autaFields->saveFields("ajax");
 	  }	
 	}
-	function logWrite($val) {
+	static function logWrite($val) {
 	 file_put_contents(plugin_dir_path( __FILE__ ) . "log.txt",date("d-m-Y h:i:s")." ".$val."\n",FILE_APPEND | LOCK_EX);
 	}
 }

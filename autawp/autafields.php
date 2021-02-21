@@ -26,21 +26,23 @@ class AutaFields {
 		$tableName=AutaPlugin::getTable($tabName);
 		$query = "SELECT * FROM `{$tableName}` ORDER BY `filterorder`";	
 		foreach( $wpdb->get_results($query) as $key => $row) {		
-			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder);
+			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder,$row->icon);
 			$load=true;
 		}	
 		return $load;
 	}
 	public function procEdit() {
 		//edit field
-		if (isset($_POST["editField"])) {			
-			$name=filter_input( INPUT_POST, "name", FILTER_SANITIZE_STRING );
-			$type=filter_input( INPUT_POST, "type", FILTER_SANITIZE_STRING );
-			$compare=filter_input( INPUT_POST, "compare", FILTER_SANITIZE_STRING );
-			$title=filter_input( INPUT_POST, "title", FILTER_SANITIZE_STRING );
-			$options=filter_input( INPUT_POST, "options", FILTER_SANITIZE_STRING );
-			$filterorder=filter_input( INPUT_POST, "filterorder", FILTER_SANITIZE_STRING );
-			$displayorder=filter_input( INPUT_POST, "displayorder", FILTER_SANITIZE_STRING );
+		$name=filter_input( INPUT_POST, "name", FILTER_SANITIZE_STRING );
+		$type=filter_input( INPUT_POST, "type", FILTER_SANITIZE_STRING );
+		$compare=filter_input( INPUT_POST, "compare", FILTER_SANITIZE_STRING );
+		$title=filter_input( INPUT_POST, "title", FILTER_SANITIZE_STRING );
+		$options=filter_input( INPUT_POST, "options", FILTER_SANITIZE_STRING );
+		$filterorder=filter_input( INPUT_POST, "filterorder", FILTER_SANITIZE_STRING );
+		$displayorder=filter_input( INPUT_POST, "displayorder", FILTER_SANITIZE_STRING );
+		$icon=filter_input( INPUT_POST, "icon", FILTER_SANITIZE_STRING );
+		
+		if (isset($_POST["editField"])) {						
 			foreach ($this->fieldsList as $f) {	
 			 if ($f->name == $name) {
 				$f->type=$type; 
@@ -49,6 +51,7 @@ class AutaFields {
 				$f->options=$options;
 				$f->filterorder=$filterorder;
 				$f->displayorder=$displayorder;
+				$f->icon=$icon;
 				$f->saveToSQL();
 				echo "changed $name";
 			 }
@@ -57,15 +60,8 @@ class AutaFields {
 		
 		//new field
 		if (isset($_POST["newField"])) {			
-			$name=filter_input( INPUT_POST, "name", FILTER_SANITIZE_STRING );
-			$type=filter_input( INPUT_POST, "type", FILTER_SANITIZE_STRING );
-			$compare=filter_input( INPUT_POST, "compare", FILTER_SANITIZE_STRING );
-			$title=filter_input( INPUT_POST, "title", FILTER_SANITIZE_STRING );
-			$options=filter_input( INPUT_POST, "options", FILTER_SANITIZE_STRING );			
-			$filterorder=filter_input( INPUT_POST, "filterorder", FILTER_SANITIZE_STRING );
-			$displayorder=filter_input( INPUT_POST, "displayorder", FILTER_SANITIZE_STRING );
 			 if ($name != "") {			
-				$f = $this->createField(AutaPlugin::$prefix.$name,$type,$compare,$title,$options,$filterorder,$displayorder);
+				$f = $this->createField(AutaPlugin::$prefix.$name,$type,$compare,$title,$options,$filterorder,$displayorder,$icon);
 				$this->fieldsList[] = $f;
 				$f->saveToSQL();				
 				echo "created $name";
@@ -90,31 +86,31 @@ class AutaFields {
 		}
 	}
 	public function printFields() {
-	?>
-	<h2>Edit fields</h2>
-	<?php
+ 	 $out="";
+	 ?>
+	 <h2>Edit fields</h2>
+	 <?php
 		foreach ($this->fieldsList as $f) {		  
 		  $out.=$f->printFieldEdit();
 		  //echo "<br />";
 		}
 		return $out;
     }
-	 public function printNewField() {
+	public function printNewField() {
 	 ?>
 	 <h2>New field</h2>
-	 <form method='post'>
-		<label>name</label><input type='text' name='name' value='' />
-		<label>type</label><input type='text' name='type' value='' />
-		<label>compare filter</label><input type='text' name='compare' value='=' />
-		<label>options (split with ;)</label><input type='text' name='options' value='' />
-		<label>title</label><input type='text' name='title' value='' />		
-		<input name='newField' type='hidden' value='edit' />
-		<input type='submit' value='create' />
+	 <form class='editFieldRow' method='post'>
+	 	<div><div><label>name</label></div><input type='text' name='name' value='' /></div>
+		<div><div><label>type</label></div><input type='text' name='type' value='' /></div>
+		<div><div><label>compare filter</label></div><input type='text' name='compare' value='=' /></div>
+		<div><div><label>options (split with ;)</label></div><input type='text' name='options' value='' /></div>
+		<div><div><label>title</label></div><input type='text' name='title' value='' /></div>		
+		<div><input name='newField' type='hidden' value='edit' /><input type='submit' value='create' /></div>
 	</form>
 	 <?php
  }
-	function createField($name,$type,$compare,$title,$options="",$filterorder="",$displayorder="") {
-		return new AutaField($name,$type,$title,$options,$this->customPostType,$compare,$filterorder,$displayorder);
+	function createField($name,$type,$compare,$title,$options="",$filterorder="",$displayorder="",$icon="") {
+		return new AutaField($name,$type,$title,$options,$this->customPostType,$compare,$filterorder,$displayorder,$icon);
 	}
 	function mauta_metaboxes( ) {
 		global $wp_meta_boxes;
@@ -152,7 +148,7 @@ class AutaFields {
 		}			
 	}   
 	function saveFields($destinationTab="fields")	{		
-		foreach ($this->fieldsList as $f) {
+		foreach ($this->fieldsList as $f) {			
 		  echo $f->saveToSQL($destinationTab);	
 		}			
 	}   
@@ -160,7 +156,7 @@ class AutaFields {
 		global $wpdb;
 		$tableName=AutaPlugin::getTable($tabName);
 		$wpdb->query( "DROP TABLE IF EXISTS {$tableName}");
-		
+		$charset_collate = $wpdb->get_charset_collate();
 		$sql = "CREATE TABLE {$tableName} (
 		  id mediumint(9) NOT NULL AUTO_INCREMENT,	
 		  name tinytext,
@@ -173,6 +169,7 @@ class AutaFields {
 		  postType tinytext,
 		  filterorder smallint,
 		  displayorder smallint,
+		  icon text,
 		  PRIMARY KEY  (id)
 		) $charset_collate;";
 
