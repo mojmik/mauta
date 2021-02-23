@@ -83,9 +83,12 @@ class ImportCSV {
 		}
 		return $out;
 	}
-	public function createPostsFromTable($table) {
+	public function createPostsFromTable($table,$fields) {
 		global $wpdb;		
-		$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table"));		
+		$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table"));	
+		
+		//get columns of csvtab
+		//get columns of wp_mauta_fields
 
 		foreach ($results as $r) {
 			//create post
@@ -107,6 +110,18 @@ class ImportCSV {
 					 //echo "<br />addmeta $postId $key $template ".$r->$template."--".$this->processTemplate($template,$r);					 
 					 add_post_meta($postId,$key,$this->processTemplate($template,$r));
 					}					
+				}
+				
+				//all mauta_fields detected in csvtab are loaded
+				foreach ($fields as $f) {
+					$name=$f->name;
+					$title=$f->title;
+					$metaValue=$r->$title;
+					echo "<br />$name $title $metaValue";
+					if (isset($metaValue)) {						
+						add_post_meta($postId,$name,$metaValue);
+						//echo "<br />added meta detected ".$name." value ".$metaValue;
+					}
 				}
 				
 				if ($this->settings["createcat"]) {

@@ -90,6 +90,7 @@ class AutaPlugin {
 		$position   = 5;    
 		add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position ); 
 	}
+
 	function mauta_plugin_actions_page() {
 	  //renders menu actions & settings page in backend
 	  ?>
@@ -98,7 +99,8 @@ class AutaPlugin {
 	  $setUrl = [
 					["recreate",add_query_arg( 'do', 'recreate'),"remove all"],
 					["refresh",add_query_arg( 'do', 'refresh'),"not implemented"],				
-					["ajax frontend",add_query_arg( 'do', 'ajax'),"populate fields for ajax frontend filtering"]		
+					["ajax frontend",add_query_arg( 'do', 'ajax'),"populate fields for ajax frontend filtering"],		
+					["gen min max",add_query_arg( 'do', 'minmax'),"generate min/max of current rows for frontend filtering"]		
 				];
 	  ?>
 	  <ul>
@@ -113,14 +115,18 @@ class AutaPlugin {
 	  <?php	  
 	  $do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
 	  AutaPlugin::$customPost->autaFields->procEdit();
-	  AutaPlugin::$customPost->autaFields->printFields();
 	  AutaPlugin::$customPost->autaFields->printNewField();
+	  AutaPlugin::$customPost->autaFields->printFields();	  
 	  if ($do=="recreate") {		    
 		AutaPlugin::$customPost->autaFields->makeTable("fields");
 		AutaPlugin::$customPost->autaFields->saveFields("fields");
 	  }	  
 	  if ($do=="ajax") {	
 		AutaPlugin::$customPost->autaFields->makeTable("ajax");
+		AutaPlugin::$customPost->autaFields->saveFields("ajax");
+	  }	
+	  if ($do=="minmax") {	
+		AutaPlugin::$customPost->autaFields->initMinMax();
 		AutaPlugin::$customPost->autaFields->saveFields("ajax");
 	  }	
 	}

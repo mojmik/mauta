@@ -98,9 +98,11 @@ class AutaCustomPost {
 		<?php	
 		$do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
 		if ($do=="csv") {
+			
 			$importCSV=new ImportCSV();		
 			$importCSV->loadCsvFile(plugin_dir_path( __FILE__ )."recsout.txt","csvtab","^","",null,true,"cp852");		  
-			$importCSV->createPostsFromTable("csvtab");	
+			$importCSV->createPostsFromTable("csvtab",$this->autaFields->fieldsList);	
+
 		  }
 		  if ($do=="removecsv") {
 			$importCSV=new ImportCSV();

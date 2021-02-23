@@ -26,7 +26,7 @@ class AutaFields {
 		$tableName=AutaPlugin::getTable($tabName);
 		$query = "SELECT * FROM `{$tableName}` ORDER BY `filterorder`";	
 		foreach( $wpdb->get_results($query) as $key => $row) {		
-			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder,$row->icon);
+			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder,$row->icon,$row->fieldformat);
 			$load=true;
 		}	
 		return $load;
@@ -41,6 +41,7 @@ class AutaFields {
 		$filterorder=filter_input( INPUT_POST, "filterorder", FILTER_SANITIZE_STRING );
 		$displayorder=filter_input( INPUT_POST, "displayorder", FILTER_SANITIZE_STRING );
 		$icon=filter_input( INPUT_POST, "icon", FILTER_SANITIZE_STRING );
+		$fieldformat=filter_input( INPUT_POST, "fieldformat", FILTER_SANITIZE_STRING );
 		
 		if (isset($_POST["editField"])) {						
 			foreach ($this->fieldsList as $f) {	
@@ -52,6 +53,7 @@ class AutaFields {
 				$f->filterorder=$filterorder;
 				$f->displayorder=$displayorder;
 				$f->icon=$icon;
+				$f->fieldformat=$fieldformat;
 				$f->saveToSQL();
 				echo "changed $name";
 			 }
@@ -60,12 +62,12 @@ class AutaFields {
 		
 		//new field
 		if (isset($_POST["newField"])) {			
-			 if ($name != "") {			
-				$f = $this->createField(AutaPlugin::$prefix.$name,$type,$compare,$title,$options,$filterorder,$displayorder,$icon);
+			 	$newName=AutaPlugin::$prefix.sanitize_title($title);
+				$f = $this->createField($newName,$type,$compare,$title,$options,$filterorder,$displayorder,$icon,$fieldformat);
 				$this->fieldsList[] = $f;
 				$f->saveToSQL();				
 				echo "created $name";
-			 }
+			 
 		}
 		
 		//delete field
@@ -100,17 +102,17 @@ class AutaFields {
 	 ?>
 	 <h2>New field</h2>
 	 <form class='editFieldRow' method='post'>
-	 	<div><div><label>name</label></div><input type='text' name='name' value='' /></div>
+		<div><div><label>name</label></div><input disabled type='text' name='name' value='' /></div>
+		<div><div><label>title</label></div><input type='text' name='title' value='' /></div>	
 		<div><div><label>type</label></div><input type='text' name='type' value='' /></div>
 		<div><div><label>compare filter</label></div><input type='text' name='compare' value='=' /></div>
-		<div><div><label>options (split with ;)</label></div><input type='text' name='options' value='' /></div>
-		<div><div><label>title</label></div><input type='text' name='title' value='' /></div>		
+		<div><div><label>options (split with ;)</label></div><input type='text' name='options' value='' /></div>			
 		<div><input name='newField' type='hidden' value='edit' /><input type='submit' value='create' /></div>
 	</form>
 	 <?php
  }
-	function createField($name,$type,$compare,$title,$options="",$filterorder="",$displayorder="",$icon="") {
-		return new AutaField($name,$type,$title,$options,$this->customPostType,$compare,$filterorder,$displayorder,$icon);
+	function createField($name,$type,$compare,$title,$options="",$filterorder="",$displayorder="",$icon="",$fieldformat="") {
+		return new AutaField($name,$type,$title,$options,$this->customPostType,$compare,$filterorder,$displayorder,$icon,$fieldformat);
 	}
 	function mauta_metaboxes( ) {
 		global $wp_meta_boxes;
@@ -128,7 +130,7 @@ class AutaFields {
 		  $f->addMetaBox($val);	
 		}
 		
-		add_meta_box("addanotheritem", __( 'Add another', 'textdomain' ), [$this,'addanother_metabox'], 'mauta', 'side', 'high');  
+		add_meta_box("addanotheritem", __( 'Add another', 'textdomain' ), [$this,'addanother_metabox'], 'mauta', 'side', 'low');  
 		
 		//
 	}	
@@ -170,6 +172,7 @@ class AutaFields {
 		  filterorder smallint,
 		  displayorder smallint,
 		  icon text,
+		  fieldformat text,
 		  PRIMARY KEY  (id)
 		) $charset_collate;";
 
@@ -178,5 +181,10 @@ class AutaFields {
 		$wpdb->query("TRUNCATE TABLE `{$tableName}`");
 		echo $tableName." created";
 	}
-	
+	function initMinMax() {		
+		foreach ($this->fieldsList as $f) {
+		 echo "<br />".$f->name." min:".$f->getValMin();
+		 echo " max:".$f->getValMax();
+		}		
+	}
 }

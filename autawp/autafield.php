@@ -3,7 +3,7 @@ namespace AutaWP;
 
 class AutaField {
  //private $thisPostCustom;
- public function __construct($name,$type="",$title="",$options="",$postType="",$compare="",$filterorder="",$displayorder="",$icon="") {
+ public function __construct($name,$type="",$title="",$options="",$postType="",$compare="",$filterorder="",$displayorder="",$icon="",$fieldformat="") {
 	  $this->name=$name;	 
 	  $this->type=$type;	
 	  $this->id=AutaPlugin::$prefix.$name;
@@ -14,6 +14,7 @@ class AutaField {
 	  $this->filterorder=$filterorder;
 	  $this->displayorder=$displayorder;
 	  $this->icon=$icon;
+	  $this->fieldformat=$fieldformat;
  } 
  public function addMetaBox($val) {
 	$this->val=$val;
@@ -67,7 +68,9 @@ class AutaField {
 			<div><div><label>title</label></div><input type='text' name='title' value='<?= $this->title?>' /></div>	
 			<div><div><label>filterorder</label></div><input type='text' name='filterorder' value='<?= $this->filterorder?>' /></div>	
 			<div><div><label>displayorder</label></div><input type='text' name='displayorder' value='<?= $this->displayorder?>' /></div>	
+			<div><div><label>fieldformat</label></div>
 			<div><div><label>icon</label></div>
+
 			<div class='iconEdit'>
 			<?php
 			if( $image = wp_get_attachment_image_src( $this->icon ) ) {
@@ -116,10 +119,64 @@ class AutaField {
 	if ($tabName=="ajax") {
 		$icon=wp_get_attachment_url($icon);
 	}
-	$query = "INSERT INTO `{$tableName}` ( `name`, `value`, `type`, `title`, `compare`, `valMin`, `valMax`, `postType`, `filterorder`, `displayorder`, `icon`) 
-		VALUES ('{$this->name}', '{$this->value}', '{$this->type}', '{$this->title}', '{$this->compare}', '{$this->valMin}', '{$this->valMax}', '{$this->customPostType}', '{$this->filterorder}', '{$this->displayorder}', '{$icon}');";   
+	$query = "INSERT INTO `{$tableName}` ( `name`, `value`, `type`, `title`, `compare`, `valMin`, `valMax`, `postType`, `filterorder`, `displayorder`, `icon`, `fieldformat`) 
+		VALUES ('{$this->name}', '{$this->value}', '{$this->type}', '{$this->title}', '{$this->compare}', '{$this->valMin}', '{$this->valMax}', '{$this->customPostType}', '{$this->filterorder}', '{$this->displayorder}', '{$icon}'), '{$this->fieldformat}';";   
 	$wpdb->get_results($query);	 
 	return "<br />{$this->name} saved";
    }
+ }
+ public function typeIs($type) {
+	if (strtoupper($this->type)==strtoupper($type)) return true;
+	return false;
+ }
+ public function initValMin() {
+	global $wpdb;
+	$cast1="";
+	$cast2="";
+	if ($this->typeIs("NUMERIC")) { 
+		 $cast1="CAST("; //numeric range
+		 $cast2="as SIGNED)"; //numeric range
+	}		
+	$query="SELECT MIN($cast1`meta_value`$cast2) AS min FROM ".$wpdb->prefix."postmeta AS pm, ".$wpdb->prefix."posts AS po 
+	WHERE pm.meta_key like '{$this->name}' AND po.post_status = 'publish' 
+	AND po.post_type = '{$this->customPostType}'";
+	
+	/*
+	$query="SELECT MIN(`meta_value`) AS min FROM ".$wpdb->prefix."postmeta AS pm 
+	WHERE pm.meta_key like '{$this->name}'";
+	*/
+	
+	$min = $wpdb->get_var($query);	 
+	$this->valMin=$min;
+	//echo "<br />".$query;
+	return $this->valMin;
+ }
+  public function initValMax() {
+	global $wpdb;
+	$cast1="";
+	$cast2="";
+	if ($this->typeIs("NUMERIC")) { 
+		 $cast1="CAST("; //numeric range
+		 $cast2="as SIGNED)"; //numeric range
+	}	
+	$query = "SELECT MAX($cast1`meta_value`$cast2) AS max FROM ".$wpdb->prefix."postmeta AS pm, ".$wpdb->prefix."posts AS po 
+	WHERE pm.meta_key like '{$this->name}' AND po.post_status = 'publish' 
+	AND po.post_type = '{$this->customPostType}'";	
+
+	/*
+	$query = "SELECT MAX(`meta_value`) AS max FROM ".$wpdb->prefix."postmeta AS pm 
+	WHERE pm.meta_key like '{$this->name}'";	
+	*/
+	
+	$max = $wpdb->get_var($query);	 
+	$this->valMax=$max;
+	//echo "<br />".$query;
+	return $this->valMax;
+ }
+ public function getValMin() {
+   return $this->initValMin();   
+ }
+ public function getValMax() {
+   return $this->initValMax();   
  }
 }
