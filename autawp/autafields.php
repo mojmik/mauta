@@ -25,7 +25,7 @@ class AutaFields {
 		global $wpdb;		
 		$tableName=AutaPlugin::getTable($tabName);
 		$query = "SELECT * FROM `{$tableName}` ORDER BY `filterorder`";	
-		foreach( $wpdb->get_results($query) as $key => $row) {		
+		foreach( $wpdb->get_results($query) as $key => $row) {					
 			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder,$row->icon,$row->fieldformat);
 			$load=true;
 		}	

@@ -68,7 +68,7 @@ class AutaField {
 			<div><div><label>title</label></div><input type='text' name='title' value='<?= $this->title?>' /></div>	
 			<div><div><label>filterorder</label></div><input type='text' name='filterorder' value='<?= $this->filterorder?>' /></div>	
 			<div><div><label>displayorder</label></div><input type='text' name='displayorder' value='<?= $this->displayorder?>' /></div>	
-			<div><div><label>fieldformat</label></div>
+			<div><div><label>fieldformat</label></div><input type='text' name='fieldformat' value='<?= $this->fieldformat?>' /></div>	
 			<div><div><label>icon</label></div>
 
 			<div class='iconEdit'>
@@ -120,9 +120,9 @@ class AutaField {
 		$icon=wp_get_attachment_url($icon);
 	}
 	$query = "INSERT INTO `{$tableName}` ( `name`, `value`, `type`, `title`, `compare`, `valMin`, `valMax`, `postType`, `filterorder`, `displayorder`, `icon`, `fieldformat`) 
-		VALUES ('{$this->name}', '{$this->value}', '{$this->type}', '{$this->title}', '{$this->compare}', '{$this->valMin}', '{$this->valMax}', '{$this->customPostType}', '{$this->filterorder}', '{$this->displayorder}', '{$icon}'), '{$this->fieldformat}';";   
+		VALUES ('{$this->name}', '{$this->value}', '{$this->type}', '{$this->title}', '{$this->compare}', '{$this->valMin}', '{$this->valMax}', '{$this->customPostType}', '{$this->filterorder}', '{$this->displayorder}', '{$icon}', '{$this->fieldformat}');";   
 	$wpdb->get_results($query);	 
-	return "<br />{$this->name} saved";
+	return "<br /> $query {$this->name} saved";
    }
  }
  public function typeIs($type) {
