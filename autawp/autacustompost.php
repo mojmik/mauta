@@ -12,15 +12,23 @@ class AutaCustomPost {
 		 add_action('admin_menu' , [$this,'add_to_admin_menu']); 
 		 
 		 //init custom fields
-		 $this->autaFields = new AutaFields($this->customPostType);		 
-		 
-		 add_action( 'admin_enqueue_scripts', [$this,'mJsEnqueue'] );			 
-	 }
-	
-	 function mJsEnqueue() {		
-		wp_enqueue_script( 'autapluginjs', plugin_dir_url( __FILE__ ) . 'auta-plugin.js', array('jquery') );		
+		 $this->autaFields = new AutaFields($this->customPostType);		 		 
+
+		 add_action( 'admin_menu', [$this,'mauta_post_actions_menu'] ); 
+		 add_action( 'save_post_'.$postType, [$this,'saveCPT'] ); 
 	 }
 
+	 public function saveCPT() {			
+		AutaCustomPost::sendMessageToMajax("deletecache");		
+	 }
+	 
+	 public function getPostTitle() {
+		return "Auta - ".$this->customPostType;
+	 }
+	 public function getPostName() {
+		return $this->customPostType;
+	 }
+	 
 	 	
 	/*
 	* Creating a function to create our CPT
@@ -29,9 +37,9 @@ class AutaCustomPost {
 	 $textDomain=AutaPlugin::$textDomain; //for If your theme is translation ready, and you want your custom post types to be translated, then you will need to mention text domain used by your theme.
 	// Set UI labels for Custom Post Type
 		$labels = array(
-			'name'                => _x( 'Auta', 'Post Type General Name', $textDomain ),
+			'name'                => _x( $this->getPostName(), 'Post Type General Name', $textDomain ),
 			'singular_name'       => _x( 'Auto', 'Post Type Singular Name', $textDomain ),
-			'menu_name'           => __( 'Auta', $textDomain ),
+			'menu_name'           => __( $this->getPostTitle(), $textDomain ),
 			'parent_item_colon'   => __( 'Nadřazené auto', $textDomain ),
 			'all_items'           => __( 'Všechna auta', $textDomain ),
 			'view_item'           => __( 'Zobrazit auto', $textDomain ),
@@ -83,6 +91,7 @@ class AutaCustomPost {
 		$setUrl = [	
 			["csv import",add_query_arg( 'do', 'csv'),"import csv file"],
 			["csv remove",add_query_arg( 'do', 'removecsv'),"remove csv imports"],
+			["prefill thumbnails",add_query_arg( 'do', 'genthumbs'),"prefill thumbnails"],
 		];
 		?>
 		<h1>CSV options</h1>
@@ -108,6 +117,10 @@ class AutaCustomPost {
 			$importCSV=new ImportCSV();
 			$importCSV->removePreviousPosts("csvtab");	
 		  }	
+		  if ($do=="genthumbs") {
+			$importCSV=new ImportCSV();
+			$importCSV->preInsertThumbs();	
+		  }	
 	}
 
 	 function add_to_admin_menu() {
@@ -120,5 +133,60 @@ class AutaCustomPost {
 		$menu_title='Import';
 		add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $function);
 	} 
-		
+	static function sendMessageToMajax($message) {
+		$fn=wp_upload_dir()["basedir"]."/$message.txt";				
+		if (!file_exists($message)) {
+			AutaPlugin::logWrite($fn);
+			file_put_contents($fn,$message,FILE_APPEND | LOCK_EX);
+		}
+	}
+	function mauta_post_actions_menu() {    
+		//adds menu item
+		$page_title = AutaPlugin::$pluginName.' - settings';   
+		$menu_title = AutaPlugin::$pluginName.' - '.$this->customPostType;   
+		$capability = 'manage_options';   
+		$menu_slug  = $this->customPostType.'-plugin-settings';   
+		$function   =  [$this,'mauta_plugin_actions_page'];   
+		$icon_url   = 'dashicons-media-code';   
+		$position   = 5;    
+		add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position ); 
+	}
+
+	function mauta_plugin_actions_page() {
+	  //renders menu actions & settings page in backend
+	  ?>
+	  <h1>Pluing settings and actions below</h1>
+	  <?php
+	  $setUrl = [
+					["recreate",add_query_arg( 'do', 'recreate'),"remove all"],
+					["refresh",add_query_arg( 'do', 'refresh'),"not implemented"],				
+					["ajax frontend",add_query_arg( 'do', 'ajax'),"populate fields for ajax frontend filtering"]
+				];
+	  ?>
+	  <ul>
+	  <?php	 
+	  foreach ($setUrl as $s) { 
+	  ?>
+		  <li><a href='<?= $s[1]?>'><?= $s[0]?></a><br /><?= $s[2]?></li>		  		  
+	  <?php
+	  }
+	  ?>
+	  </ul>
+	  <?php	  
+	  $do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
+	  $cpt=filter_input( INPUT_GET, "cpt", FILTER_SANITIZE_STRING );
+	  $this->autaFields->procEdit();
+	  $this->autaFields->printNewField();
+	  $this->autaFields->printFields();	  
+	  if ($do=="recreate") {		    
+		$this->autaFields->makeTable("fields");
+		$this->autaFields->saveFields("fields");
+	  }	  
+	  if ($do=="ajax") {	
+		$this->autaFields->makeTable("ajax");
+		$this->autaFields->initMinMax();
+		$this->autaFields->saveFields("ajax");
+		AutaCustomPost::sendMessageToMajax("deletecache");
+	  }		  
+	}	
 }

@@ -6,8 +6,8 @@ class AutaFields {
 	private $postCustomFields;	
 	public $customPostType;
 	public function __construct($postType) {					
-		add_action( 'add_meta_boxes_mauta', [$this,'mauta_metaboxes'] );		
-		add_action( 'save_post_mauta', [$this,'mauta_save_post'] ); 
+		add_action( 'add_meta_boxes_'.$postType, [$this,'mauta_metaboxes'] );		
+		add_action( 'save_post_'.$postType, [$this,'mauta_save_post'] ); 
 		$this->customPostType=$postType;
 		$forcePrepopulate=false; //set to true for premade custom fields
 		if ($forcePrepopulate) {
@@ -23,7 +23,7 @@ class AutaFields {
 	}
 	public function loadFromSQL($tabName="fields") {
 		global $wpdb;		
-		$tableName=AutaPlugin::getTable($tabName);
+		$tableName=AutaPlugin::getTable($tabName,$this->customPostType);
 		$query = "SELECT * FROM `{$tableName}` ORDER BY `filterorder`";	
 		foreach( $wpdb->get_results($query) as $key => $row) {					
 			$this->fieldsList[] = $this->createField($row->name,$row->type,$row->compare,$row->title,$row->value,$row->filterorder,$row->displayorder,$row->icon,$row->fieldformat);
@@ -130,7 +130,7 @@ class AutaFields {
 		  $f->addMetaBox($val);	
 		}
 		
-		add_meta_box("addanotheritem", __( 'Add another', 'textdomain' ), [$this,'addanother_metabox'], 'mauta', 'side', 'low');  
+		add_meta_box("addanotheritem", __( 'Add another', 'textdomain' ), [$this,'addanother_metabox'], $this->customPostType, 'side', 'low');  
 		
 		//
 	}	
@@ -142,21 +142,22 @@ class AutaFields {
 		<button onclick='javascipt:saveAndAdd();'>Add another</a>				 
 		<?php
 	}
-	function mauta_save_post()	{
+	function mauta_save_post()	{		
 		if(empty($_POST)) return; //tackle trigger by add new 
 		global $post;
+		AutaCustomPost::sendMessageToMajax("deletecache");
 		foreach ($this->fieldsList as $f) {
 		  $f->saveField();	
 		}			
 	}   
 	function saveFields($destinationTab="fields")	{		
 		foreach ($this->fieldsList as $f) {			
-		  echo $f->saveToSQL($destinationTab);	
+		  $f->saveToSQL($destinationTab);	
 		}			
 	}   
 	function makeTable($tabName="fields") {
 		global $wpdb;
-		$tableName=AutaPlugin::getTable($tabName);
+		$tableName=AutaPlugin::getTable($tabName,$this->customPostType);
 		$wpdb->query( "DROP TABLE IF EXISTS {$tableName}");
 		$charset_collate = $wpdb->get_charset_collate();
 		$sql = "CREATE TABLE {$tableName} (
@@ -178,8 +179,7 @@ class AutaFields {
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 		maybe_create_table($tableName, $sql );
-		$wpdb->query("TRUNCATE TABLE `{$tableName}`");
-		echo $tableName." created";
+		$wpdb->query("TRUNCATE TABLE `{$tableName}`");		
 	}
 	function initMinMax() {		
 		foreach ($this->fieldsList as $f) {

@@ -24,8 +24,7 @@ class ImportCSV {
 		$this->mapping=[
 		 "post" => [
 			 "post_title" => "auto %1 %2|Běžné číslo|Vozidlo - model",
-			 "post_content" => "%1|Barva",
-			 "post_description" => "%1|Popis",		 
+			 "post_content" => "%1|Popis modelu"			 	 
 		 ],
 		 "meta" => [
 			 "mauta_znacka" => "%1|Vozidlo - značka",
@@ -66,6 +65,47 @@ class ImportCSV {
 			";
 			$result = $wpdb->get_results($query);  			
 		}
+	}
+	public function preInsertThumbs() {
+		global $post;		
+
+		//list all images
+		$args = array(
+			'post_type' => 'attachment',
+			'post_status' => 'published',
+			'posts_per_page' =>-1,			
+			'numberposts' => null,
+			'orderby' => 'modified',
+            'order' => 'DESC',
+		);		
+		$attachments = get_posts($args);
+		foreach ( $attachments as $pic ) {				
+			//echo $pic->ID.$pic->post_name."<br />";
+			$pics[]=["ID" => $pic->ID, "name" => $pic->post_name];
+		}
+		
+		//insert thumbnail programatically			
+		$args = array( 'posts_per_page' => -1, 'post_type' => AutaPlugin::$customPostType );
+		$myposts = get_posts( $args );
+
+		foreach ( $myposts as $post ) {	
+			$thumbnail_id=0;		
+			$arr = explode(' ',trim($post->post_content));
+			$word=$arr[0];
+			$word=strtolower($word);
+			if (strlen($word)<4) continue;
+			foreach ($pics as $pic)	 {
+				if (strpos($pic["name"],$word)!==false) { 
+					$thumbnail_id=$pic["ID"];
+					echo "<br />".$word."found in ".$pic["name"];
+					break;
+				}
+			}
+			if ($thumbnail_id>0) { 
+				update_post_meta( $post->ID, '_thumbnail_id', $thumbnail_id );
+				//echo "<br />adding thumb ".$post->post_name;
+			}
+		}		
 	}
 	private function processTemplate($template,$r) {
 		$templateEx=explode("|",$template);
@@ -117,12 +157,13 @@ class ImportCSV {
 					$name=$f->name;
 					$title=$f->title;
 					$metaValue=$r->$title;
-					echo "<br />$name $title $metaValue";
+					//echo "<br />$name $title $metaValue";
 					if (isset($metaValue)) {						
 						add_post_meta($postId,$name,$metaValue);
 						//echo "<br />added meta detected ".$name." value ".$metaValue;
 					}
 				}
+						
 				
 				if ($this->settings["createcat"]) {
 					//category?
@@ -153,6 +194,7 @@ class ImportCSV {
 	public function loadCsvFile($file,$table,$sep="^",$enc='"',$skipCols=null,$createTable=false,$encoding="") {
 		global $wpdb;
 		$fh = fopen($file, "r"); 
+		//echo "-".$fh." ".$file."-";
 		$queryO="INSERT INTO `$table` SET ";
 		$filesize=filesize($file);
 		$radek=0;
@@ -161,7 +203,7 @@ class ImportCSV {
 		$mCols=array();
 		while ($line = $this->fgetcsvUTF8($fh, 8000, $sep,$encoding)) {		
 			//utf8_encode			
-			
+			//echo "-line: ".$fh." ".$file." $line-";
 			$lineNum++;
 			if ($lineNum===1) {		
 			 $mCols=$line;

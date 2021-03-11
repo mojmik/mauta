@@ -18,7 +18,8 @@ class AutaField {
  } 
  public function addMetaBox($val) {
 	$this->val=$val;
-	add_meta_box("postfunctiondiv{$this->name}", $this->title, [$this,'mauta_metabox_html'], 'mauta', 'side', 'high');  
+	AutaPlugin::logWrite("add metabox: {$this->customPostType} {$this->name}");	
+	add_meta_box("postfunctiondiv{$this->name}", $this->title, [$this,'mauta_metabox_html'], $this->customPostType, 'side', 'high');  
  }
  function mauta_metabox_html() 	{				
 		$val = isset($this->val)?$this->val:'';	
@@ -111,14 +112,14 @@ class AutaField {
 		$this->compare="=";
    } 	  
    else $this->value=$this->options;   
-   $tableName=AutaPlugin::getTable($tabName);
+   $tableName=AutaPlugin::getTable($tabName,$this->customPostType);
    $query = "DELETE FROM `{$tableName}` WHERE `name` like '{$this->name}';";   
    $wpdb->get_results($query);	
    if (!$deleteOnly) {   	
 	$icon=$this->icon;		
 	if ($tabName=="ajax") {
 		$icon=wp_get_attachment_url($icon);
-	}
+	}	
 	$query = "INSERT INTO `{$tableName}` ( `name`, `value`, `type`, `title`, `compare`, `valMin`, `valMax`, `postType`, `filterorder`, `displayorder`, `icon`, `fieldformat`) 
 		VALUES ('{$this->name}', '{$this->value}', '{$this->type}', '{$this->title}', '{$this->compare}', '{$this->valMin}', '{$this->valMax}', '{$this->customPostType}', '{$this->filterorder}', '{$this->displayorder}', '{$icon}', '{$this->fieldformat}');";   
 	$wpdb->get_results($query);	 
