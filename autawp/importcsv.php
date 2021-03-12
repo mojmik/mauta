@@ -7,11 +7,6 @@ class ImportCSV {
 	private $customPostType;	
     private $settings=array();	
 	public function __construct($cpt) {
-		/*
-		$this->csvSeparator=$sep;
-		$this->csvEnclosed=$enc;
-		$this->fileName=$file;
-		*/
 		$this->customPostType=$cpt;
 		$this->settings=[		
 		 "createpost" => true,
