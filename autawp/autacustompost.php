@@ -108,17 +108,17 @@ class AutaCustomPost {
 		$do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
 		if ($do=="csv") {
 			
-			$importCSV=new ImportCSV();		
+			$importCSV=new ImportCSV($this->customPostType);		
 			$importCSV->loadCsvFile(plugin_dir_path( __FILE__ )."recsout.txt","csvtab","^","",null,true,"cp852");		  
 			$importCSV->createPostsFromTable("csvtab",$this->autaFields->fieldsList);	
 
 		  }
 		  if ($do=="removecsv") {
-			$importCSV=new ImportCSV();
+			$importCSV=new ImportCSV($this->customPostType);
 			$importCSV->removePreviousPosts("csvtab");	
 		  }	
 		  if ($do=="genthumbs") {
-			$importCSV=new ImportCSV();
+			$importCSV=new ImportCSV($this->customPostType);
 			$importCSV->preInsertThumbs();	
 		  }	
 	}

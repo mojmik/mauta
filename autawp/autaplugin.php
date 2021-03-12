@@ -2,13 +2,12 @@
 namespace AutaWP;
 
 class AutaPlugin {
-	public static $pluginName="Auta plugin";
+	public static $pluginName="Auta pole";
 	public static $prefix="mauta_";
 	private static $customPost=[];
 	public static $customPostType=["mauta","mauta2"];
-	public static $textDomain="mauta-plugin";	
-	private static $mainPath="";
-        
+	public static $textDomain="mauta-plugin";		
+       
     function mLoadClass($class) {	
 		if (strpos($class,"AutaWP")!==0) return;
 		$path=MAUTA_PLUGIN_PATH.str_replace("\\","/",strtolower("$class.php"));		

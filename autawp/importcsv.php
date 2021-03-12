@@ -4,14 +4,15 @@ namespace AutaWP;
 class ImportCSV {
 	public $fieldsList=array();
 	private $postCustomFields;	
-	public $customPostType;	
+	private $customPostType;	
     private $settings=array();	
-	public function __construct() {
+	public function __construct($cpt) {
 		/*
 		$this->csvSeparator=$sep;
 		$this->csvEnclosed=$enc;
 		$this->fileName=$file;
 		*/
+		$this->customPostType=$cpt;
 		$this->settings=[		
 		 "createpost" => true,
 		 "createmeta" => true,
@@ -85,7 +86,7 @@ class ImportCSV {
 		}
 		
 		//insert thumbnail programatically			
-		$args = array( 'posts_per_page' => -1, 'post_type' => AutaPlugin::$customPostType );
+		$args = array( 'posts_per_page' => -1, 'post_type' => $this->customPostType );
 		$myposts = get_posts( $args );
 
 		foreach ( $myposts as $post ) {	
@@ -139,7 +140,7 @@ class ImportCSV {
 				 $postArr[$key]=$this->processTemplate($template,$r);				 
 				}								
 				$postArr["post_status"]="publish";
-				$postArr["post_type"]=AutaPlugin::$customPostType;
+				$postArr["post_type"]=$this->customPostType;
 				//print_r($postArr);
 				$postId=wp_insert_post($postArr);
 				echo "<br />inserted {$postArr["post_title"]} $postId";
