@@ -5,7 +5,7 @@ class AutaPlugin {
 	public static $pluginName="Auta pole";
 	public static $prefix="mauta_";
 	private static $customPost=[];
-	public static $customPostType=["mauta","mauta2"];
+	public static $customPostType=["mauta","mauta2", "mycka"];
 	public static $textDomain="mauta-plugin";		
        
     function mLoadClass($class) {	

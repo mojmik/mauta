@@ -62,6 +62,7 @@ class AutaFields {
 		
 		//new field
 		if (isset($_POST["newField"])) {			
+				//create table if not exists
 			 	$newName=AutaPlugin::$prefix.sanitize_title($title);
 				$f = $this->createField($newName,$type,$compare,$title,$options,$filterorder,$displayorder,$icon,$fieldformat);
 				$this->fieldsList[] = $f;
@@ -155,9 +156,13 @@ class AutaFields {
 		  $f->saveToSQL($destinationTab);	
 		}			
 	}   
-	function makeTable($tabName="fields") {
+	function makeTable($tabName="fields",$drop=false) {
 		global $wpdb;
 		$tableName=AutaPlugin::getTable($tabName,$this->customPostType);
+		if(!$drop && $wpdb->get_var("SHOW TABLES LIKE '$tableName'") == $tableName) {
+		 //table exists and not drop
+		 return true;
+		}		
 		$wpdb->query( "DROP TABLE IF EXISTS {$tableName}");
 		$charset_collate = $wpdb->get_charset_collate();
 		$sql = "CREATE TABLE {$tableName} (

@@ -16,6 +16,7 @@ class AutaCustomPost {
 
 		 add_action( 'admin_menu', [$this,'mauta_post_actions_menu'] ); 
 		 add_action( 'save_post_'.$postType, [$this,'saveCPT'] ); 
+		 
 	 }
 
 	 public function saveCPT() {			
@@ -41,7 +42,7 @@ class AutaCustomPost {
 			'singular_name'       => _x( 'Auto', 'Post Type Singular Name', $textDomain ),
 			'menu_name'           => __( $this->getPostTitle(), $textDomain ),
 			'parent_item_colon'   => __( 'Nadřazené auto', $textDomain ),
-			'all_items'           => __( 'Všechna auta', $textDomain ),
+			'all_items'           => __( 'Všechny', $textDomain ),
 			'view_item'           => __( 'Zobrazit auto', $textDomain ),
 			'add_new_item'        => __( 'Přidat auto', $textDomain ),
 			'add_new'             => __( 'Přidat nové', $textDomain ),
@@ -175,18 +176,21 @@ class AutaCustomPost {
 	  <?php	  
 	  $do=filter_input( INPUT_GET, "do", FILTER_SANITIZE_STRING );
 	  $cpt=filter_input( INPUT_GET, "cpt", FILTER_SANITIZE_STRING );
+	    
+	  $this->autaFields->makeTable("fields");
+	  if ($do=="recreate") {		    
+		$this->autaFields->makeTable("fields",true);		
+		$this->autaFields->fieldsList=array();
+	  }	 
 	  $this->autaFields->procEdit();
 	  $this->autaFields->printNewField();
-	  $this->autaFields->printFields();	  
-	  if ($do=="recreate") {		    
-		$this->autaFields->makeTable("fields");
-		$this->autaFields->saveFields("fields");
-	  }	  
+	  $this->autaFields->printFields();		 
 	  if ($do=="ajax") {	
 		$this->autaFields->makeTable("ajax");
 		$this->autaFields->initMinMax();
 		$this->autaFields->saveFields("ajax");
 		AutaCustomPost::sendMessageToMajax("deletecache");
-	  }		  
+	  }
+	 	  
 	}	
 }
